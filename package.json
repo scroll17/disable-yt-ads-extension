@@ -1,0 +1,23 @@
+{
+  "name": "disable-yt-ads-extension",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "javascript-obfuscator": "^2.19.0"
+  },
+  "scripts": {
+    "pre-commit": "node pre-commit.js"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

@@ -1,2 +1,2 @@
-# disable-yt-ads-extension
-Disable YouTube Ads Extension
+# Disable YouTube Ads Extension
+

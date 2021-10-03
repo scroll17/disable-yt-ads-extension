@@ -1,0 +1,30 @@
+{
+  "name": "Disable YouTube Ads",
+  "version": "1.0.0",
+  "author": "Denis Zolotarenko",
+  "manifest_version": 2,
+  "browser_action": {
+      "default_popup": "index.html",
+      "default_title": "Disable YT Ads",
+      "default_icon": "icon.png"
+  },
+  "icons": {
+      "256": "icon.png"
+  },
+  "content_security_policy": "script-src 'self'; object-src 'self'; style-src * data: 'unsafe-inline' 'unsafe-eval';",
+  "permissions": [
+    "<all_urls>",
+    "background",
+    "activeTab"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/"],
+      "js": ["execute-script.js", "disable-ads-script.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    "styles/*",
+    "images/*"
+  ]
+}
