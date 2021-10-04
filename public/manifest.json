@@ -20,7 +20,7 @@
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/"],
-      "js": ["execute-script.js", "disable-ads-script.js"]
+      "js": ["execute-script.js", "disable-ads-script.js", "change-text.js"]
     }
   ],
   "web_accessible_resources": [
