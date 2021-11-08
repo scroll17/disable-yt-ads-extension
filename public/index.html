@@ -20,7 +20,7 @@
 
       .modal-header {
         width: 100px;
-        height: 100px;
+        height: 180px;
         background: url('./images/login-bg.jpg');
         background-size: cover;
 
@@ -30,7 +30,7 @@
         align-items: center;
       }
 
-      i {
+      #modal {
         background: url('./images/power-off-solid.svg');
         background-repeat: no-repeat;
         background-size: cover;
@@ -44,7 +44,7 @@
         transition: all 0.3s ease;
       }
 
-      i:hover {
+      #modal:hover {
         cursor: pointer;
         transform: scale(1.2);
       }
@@ -58,6 +58,34 @@
         font-size: 24px;
         font-family: 'Open Sans', sans-serif;
       }
+
+      #auto-off {
+        color: white;
+
+        padding: 0 0 0 0;
+        margin-top: 10px;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #auto-off p {
+        margin: 0;
+        padding: 0;
+      }
+
+      #auto-off i {
+        color: black;
+        padding-top: 5px;
+        transition: all 0.3s ease;
+      }
+
+      #auto-off i:hover {
+        cursor: pointer;
+        transform: scale(1.2);
+      }
     </style>
   </head>
   <body>
@@ -67,9 +95,16 @@
       <div class="div-text" id="text">
         OFF
       </div>
+
+      <hr style="width: 85%; margin: 10px 0"/>
+
+      <div id="auto-off">
+        <p>AUTO OFF: </p>
+        <i id="b-auto-off">NO</i>
+      </div>
     </div>
 
-    <script type="text/javascript" src="change-text.js"></script>
     <script type="text/javascript" src="execute-script.js"></script>
+    <script type="text/javascript" src="change-text.js"></script>
   </body>
 </html>
