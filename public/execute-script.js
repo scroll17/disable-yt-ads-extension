@@ -7,7 +7,7 @@ window.onload = () => {
 
     if(buttonRemoveAds) {
         isScriptExisting(res => {
-            if(!res) {
+            if(res) {
                 const text = document.getElementById('text')
                 text.style.color = 'green';
                 text.style.fontWeight = 'bold';
