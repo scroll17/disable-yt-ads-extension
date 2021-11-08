@@ -1,39 +1,24 @@
-const button = document.getElementById('modal');
+const REMOVE_ADS_STATUS = 'remove-ads-status';
+const AUTO_REMOVE_ADS_STATUS = 'auto-remove-ads-status'
 
-if(button) {
-    button.onclick = function (el) {
-        const REMOVE_ADS_STATUS = 'remove-ads-status';
+const buttonRemoveAds = document.getElementById('modal');
+const buttonAutoRemoveAds = document.getElementById('b-auto-off')
 
-        isScriptExisting(res => {
-            if(!res) {
-                console.log('- EXECUTE -')
+if(buttonRemoveAds) buttonRemoveAds.onclick = () => executeDisableAdsScript();
 
-                chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-                    chrome.tabs.executeScript(
-                        tabs[0].id,
-                        {
-                            file: './disable-ads-script.js'
-                        },
-                        result => {
-                            localStorage.setItem(REMOVE_ADS_STATUS, 'on')
-                            console.log('disable ads script result => ', result)
+if(buttonAutoRemoveAds) {
+    toggleAutoRemoveAdsStatus();
 
-                            changeText();
-                        }
-                    )
-                })
-            }
-        })
+    buttonAutoRemoveAds.onclick = () => {
+        const autoRemoveIsOn = localStorage.getItem(AUTO_REMOVE_ADS_STATUS);
+        if(Number(autoRemoveIsOn) === 0) {
+            localStorage.setItem(AUTO_REMOVE_ADS_STATUS, Number(1).toString())
+        } else {
+            localStorage.setItem(AUTO_REMOVE_ADS_STATUS, Number(0).toString())
+        }
+
+        toggleAutoRemoveAdsStatus();
     }
-}
-
-function changeText() {
-    const text = document.getElementById('text')
-    text.style.color = 'green';
-    text.style.fontWeight = 'bold';
-    text.innerText = 'ON'
-
-    console.log('- TEXT -CHANGED -')
 }
 
 function isScriptExisting(callback) {
@@ -49,4 +34,52 @@ function isScriptExisting(callback) {
             }
         )
     })
+}
+
+function executeDisableAdsScript() {
+    isScriptExisting(res => {
+        if(!res) {
+            console.log('- EXECUTE -')
+
+            chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+                chrome.tabs.executeScript(
+                    tabs[0].id,
+                    {
+                        file: './disable-ads-script.js'
+                    },
+                    result => {
+                        localStorage.setItem(REMOVE_ADS_STATUS, 'on')
+                        console.log('disable ads script result => ', result)
+
+                        const text = document.getElementById('text')
+                        text.style.color = 'green';
+                        text.style.fontWeight = 'bold';
+                        text.innerText = 'ON'
+
+                        console.log('- TEXT OF DISABLE STATUS CHANGED -')
+                    }
+                )
+            })
+        }
+    })
+}
+
+function toggleAutoRemoveAdsStatus() {
+    const autoRemoveIsOn = localStorage.getItem(AUTO_REMOVE_ADS_STATUS);
+    if(autoRemoveIsOn) {
+        const res = Boolean(Number(autoRemoveIsOn));
+        if(res) {
+            executeDisableAdsScript();
+
+            buttonAutoRemoveAds.style.color = 'limegreen';
+            buttonAutoRemoveAds.style.fontWeight = 'bold';
+            buttonAutoRemoveAds.innerText = 'YES'
+        } else {
+            buttonAutoRemoveAds.style.color = 'black';
+            buttonAutoRemoveAds.style.fontWeight = undefined;
+            buttonAutoRemoveAds.innerText = 'NO'
+        }
+    } else {
+        localStorage.setItem(AUTO_REMOVE_ADS_STATUS, Number(0).toString())
+    }
 }

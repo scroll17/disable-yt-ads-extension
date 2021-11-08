@@ -1,4 +1,4 @@
-window.onload = () => {
+function getRemoveAdsStatusInPage() {
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
         chrome.tabs.executeScript(
             tabs[0].id,
@@ -10,7 +10,7 @@ window.onload = () => {
 
                 if(res) {
                     const text = document.getElementById('text')
-                    text.style.color = 'green';
+                    text.style.color = 'limegreen';
                     text.style.fontWeight = 'bold';
                     text.innerText = 'ON'
                 }
@@ -18,3 +18,5 @@ window.onload = () => {
         )
     })
 }
+
+window.onload = () => getRemoveAdsStatusInPage();
