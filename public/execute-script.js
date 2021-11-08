@@ -1,23 +1,36 @@
 const REMOVE_ADS_STATUS = 'remove-ads-status';
 const AUTO_REMOVE_ADS_STATUS = 'auto-remove-ads-status'
 
-const buttonRemoveAds = document.getElementById('modal');
-const buttonAutoRemoveAds = document.getElementById('b-auto-off')
+window.onload = () => {
+    const buttonRemoveAds = document.getElementById('modal');
+    const buttonAutoRemoveAds = document.getElementById('b-auto-off')
 
-if(buttonRemoveAds) buttonRemoveAds.onclick = () => executeDisableAdsScript();
+    if(buttonRemoveAds) {
+        isScriptExisting(res => {
+            if(!res) {
+                const text = document.getElementById('text')
+                text.style.color = 'green';
+                text.style.fontWeight = 'bold';
+                text.innerText = 'ON'
+            }
+        })
 
-if(buttonAutoRemoveAds) {
-    toggleAutoRemoveAdsStatus();
+        buttonRemoveAds.onclick = () => executeDisableAdsScript();
+    }
 
-    buttonAutoRemoveAds.onclick = () => {
-        const autoRemoveIsOn = localStorage.getItem(AUTO_REMOVE_ADS_STATUS);
-        if(Number(autoRemoveIsOn) === 0) {
-            localStorage.setItem(AUTO_REMOVE_ADS_STATUS, Number(1).toString())
-        } else {
-            localStorage.setItem(AUTO_REMOVE_ADS_STATUS, Number(0).toString())
+    if(buttonAutoRemoveAds) {
+        toggleAutoRemoveAdsStatus(buttonAutoRemoveAds);
+
+        buttonAutoRemoveAds.onclick = () => {
+            const autoRemoveIsOn = localStorage.getItem(AUTO_REMOVE_ADS_STATUS);
+            if(Number(autoRemoveIsOn) === 0) {
+                localStorage.setItem(AUTO_REMOVE_ADS_STATUS, Number(1).toString())
+            } else {
+                localStorage.setItem(AUTO_REMOVE_ADS_STATUS, Number(0).toString())
+            }
+
+            toggleAutoRemoveAdsStatus(buttonAutoRemoveAds);
         }
-
-        toggleAutoRemoveAdsStatus();
     }
 }
 
@@ -64,20 +77,20 @@ function executeDisableAdsScript() {
     })
 }
 
-function toggleAutoRemoveAdsStatus() {
+function toggleAutoRemoveAdsStatus(element) {
     const autoRemoveIsOn = localStorage.getItem(AUTO_REMOVE_ADS_STATUS);
     if(autoRemoveIsOn) {
         const res = Boolean(Number(autoRemoveIsOn));
         if(res) {
             executeDisableAdsScript();
 
-            buttonAutoRemoveAds.style.color = 'limegreen';
-            buttonAutoRemoveAds.style.fontWeight = 'bold';
-            buttonAutoRemoveAds.innerText = 'YES'
+            element.style.color = 'limegreen';
+            element.style.fontWeight = 'bold';
+            element.innerText = 'YES'
         } else {
-            buttonAutoRemoveAds.style.color = 'black';
-            buttonAutoRemoveAds.style.fontWeight = undefined;
-            buttonAutoRemoveAds.innerText = 'NO'
+            element.style.color = 'black';
+            element.style.fontWeight = undefined;
+            element.innerText = 'NO'
         }
     } else {
         localStorage.setItem(AUTO_REMOVE_ADS_STATUS, Number(0).toString())
