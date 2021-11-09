@@ -1,10 +1,10 @@
 const REMOVE_ADS_STATUS = 'remove-ads-status';
 const AUTO_REMOVE_ADS_STATUS = 'auto-remove-ads-status'
 
-window.onload = () => {
-    const buttonRemoveAds = document.getElementById('modal');
-    const buttonAutoRemoveAds = document.getElementById('b-auto-off')
+const buttonRemoveAds = document.getElementById('modal');
+const buttonAutoRemoveAds = document.getElementById('b-auto-off')
 
+window.onload = () => {
     if(buttonRemoveAds) {
         isScriptExisting(res => {
             if(res) {
@@ -17,20 +17,20 @@ window.onload = () => {
 
         buttonRemoveAds.onclick = () => executeDisableAdsScript();
     }
+}
 
-    if(buttonAutoRemoveAds) {
-        toggleAutoRemoveAdsStatus(buttonAutoRemoveAds);
+if(buttonAutoRemoveAds) {
+    toggleAutoRemoveAdsStatus(buttonAutoRemoveAds);
 
-        buttonAutoRemoveAds.onclick = () => {
-            const autoRemoveIsOn = localStorage.getItem(AUTO_REMOVE_ADS_STATUS);
-            if(Number(autoRemoveIsOn) === 0) {
-                localStorage.setItem(AUTO_REMOVE_ADS_STATUS, Number(1).toString())
-            } else {
-                localStorage.setItem(AUTO_REMOVE_ADS_STATUS, Number(0).toString())
-            }
-
-            toggleAutoRemoveAdsStatus(buttonAutoRemoveAds);
+    buttonAutoRemoveAds.onclick = () => {
+        const autoRemoveIsOn = localStorage.getItem(AUTO_REMOVE_ADS_STATUS);
+        if(Number(autoRemoveIsOn) === 0) {
+            localStorage.setItem(AUTO_REMOVE_ADS_STATUS, Number(1).toString())
+        } else {
+            localStorage.setItem(AUTO_REMOVE_ADS_STATUS, Number(0).toString())
         }
+
+        toggleAutoRemoveAdsStatus(buttonAutoRemoveAds);
     }
 }
 
