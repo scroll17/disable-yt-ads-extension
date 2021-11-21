@@ -12,9 +12,9 @@ chrome.tabs.onUpdated.addListener( function (tabId, changeInfo, tab) {
                 if(res) {
                     console.log('%c(Auto) Advertising remove script init!', 'color: green')
 
-                    getLocalStorageItem(tabId, value => {
+                    getLocalStorageItem(tabId, AUTO_REMOVE_ADS_STATUS, value => {
                         if(!value) {
-                            setLocalStorageItem(AUTO_REMOVE_ADS_STATUS, '0', result => {
+                            setLocalStorageItem(tabId, AUTO_REMOVE_ADS_STATUS, '0', result => {
                                 console.log('- SET AUTO REMOVE ADS LC ITEM-')
                             })
                         } else {
