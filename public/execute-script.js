@@ -20,7 +20,12 @@ window.onload = () => {
 }
 
 if(buttonAutoRemoveAds) {
-    toggleAutoRemoveAdsStatus(buttonAutoRemoveAds);
+    chrome.tabs.onUpdated.addListener( function (tabId, changeInfo, tab) {
+        if (changeInfo.status == 'complete' && tab.active) {
+            console.debug('- page loaded -')
+            toggleAutoRemoveAdsStatus(buttonAutoRemoveAds);
+        }
+    })
 
     buttonAutoRemoveAds.onclick = () => {
         const autoRemoveIsOn = localStorage.getItem(AUTO_REMOVE_ADS_STATUS);

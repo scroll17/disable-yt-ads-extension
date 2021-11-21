@@ -23,6 +23,10 @@
       "js": ["execute-script.js", "disable-ads-script.js"]
     }
   ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
   "web_accessible_resources": [
     "styles/*",
     "images/*"
