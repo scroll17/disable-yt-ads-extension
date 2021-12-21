@@ -104,9 +104,9 @@ class Page {
     async _getDisableAdsScriptExecuteResult(tabId, repeat, sleepTime) {
         this.logger.debug('Get disable ADS script execute result...', { tabId, repeat, sleepTime })
 
-        let step = 1;
-        while (step <= repeat) {
-            this.logger.debug('Step -', step);
+        let attempt = 1;
+        while (attempt <= repeat) {
+            this.logger.debug('Attempt -', attempt);
 
             const [resultObject] = await chrome.scripting.executeScript({
                 target: {
@@ -135,11 +135,11 @@ class Page {
                     this.logger.debug('Remove ADS script is not running...', { run, error })
 
                    await sleep(sleepTime)
-                   step++;
+                   attempt++;
                 }
             } else {
                 await sleep(sleepTime)
-                step++;
+                attempt++;
             }
         }
 
@@ -160,6 +160,8 @@ class Page {
                 script.src = scriptUrl;
 
                 document.documentElement.appendChild(script)
+
+                return 'OK'
             },
             args: [this.DISABLE_ADS_SCRIPT_ID, this._getDisableAdsScriptUrl()]
         })
@@ -170,8 +172,10 @@ class Page {
     async _executeDisableAdsScript(tabId, repeat, sleepTime) {
         this.logger.debug('Start execute disable ADS script...', { tabId, repeat, sleepTime })
 
-        let step = 1;
-        while (step <= repeat) {
+        let attempt = 1;
+        while (attempt <= repeat) {
+            this.logger.debug('Attempt -', attempt);
+
             const [resultObject] = await chrome.scripting.executeScript({
                 target: {
                     tabId
@@ -189,7 +193,7 @@ class Page {
                 this.logger.debug('Remove ADS script is not running...', { run, error })
 
                 await sleep(sleepTime)
-                step++;
+                attempt++;
             }
         }
 
