@@ -2,8 +2,8 @@
   "name": "Disable YouTube Ads",
   "version": "1.0.0",
   "author": "Denis Zolotarenko",
-  "manifest_version": 2,
-  "browser_action": {
+  "manifest_version": 3,
+  "action": {
       "default_popup": "index.html",
       "default_title": "Disable YT Ads",
       "default_icon": "icon.png"
@@ -11,24 +11,34 @@
   "icons": {
       "256": "icon.png"
   },
-  "content_security_policy": "script-src 'self'; object-src 'self'; style-src * data: 'unsafe-inline' 'unsafe-eval';",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src * data: 'unsafe-inline' 'unsafe-eval';"
+  },
+  "host_permissions": ["*://*/*"],
   "permissions": [
-    "<all_urls>",
+    "tabs",
+    "activeTab",
+    "scripting",
     "background",
-    "activeTab"
+    "storage"
   ],
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/"],
-      "js": ["execute-script.js", "disable-ads-script.js"]
+      "js": ["execute-script.js", "disable-ads-script.js", "base.mjs"]
     }
   ],
   "background": {
-    "scripts": ["background.js"],
-    "persistent": true
+    "service_worker": "background.js",
+    "type": "module"
   },
-  "web_accessible_resources": [
-    "styles/*",
-    "images/*"
-  ]
+  "web_accessible_resources": [{
+    "resources": [
+      "styles/*",
+      "images/*",
+      "disable-ads-script.js"
+    ],
+    "matches": ["<all_urls>"],
+    "extension_ids": []
+  }]
 }
