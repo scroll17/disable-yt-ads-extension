@@ -1,9 +1,9 @@
-import { sleep, Logger, TabLocalStorage } from './base.mjs'
+import { sleep, Logger, TabLocalStorage } from './js/base.mjs'
 
 class Page {
     AUTO_REMOVE_ADS_STATUS = 'auto-remove-ads-status'
-    YT_URL = 'www.youtube.com/watch'
     DISABLE_ADS_SCRIPT_ID = 'disable-ads-script-id'
+    YT_URL = 'www.youtube.com/watch'
 
     logger = new Logger()
 

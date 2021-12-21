@@ -25,7 +25,7 @@
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/"],
-      "js": ["execute-script.js", "disable-ads-script.js", "base.mjs"]
+      "js": ["execute-script.js", "disable-ads-script.js", "js/base.mjs"]
     }
   ],
   "background": {
