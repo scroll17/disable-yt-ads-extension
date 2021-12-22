@@ -132,3 +132,191 @@ export class BrowserTab {
         return (this.currentTab = tabs[0])
     }
 }
+
+export class ControlHTMLElement {
+    constructor(element) {
+        if(!element) throw new Error(`Element is required param`)
+        this.element = element
+    }
+
+    getElement() {
+        return this.element;
+    }
+
+    setElement(element) {
+        if(!element) throw new Error(`Element is required param`)
+        this.element = element
+    }
+
+    setStyle(obj) {
+        const elementStyle = this.element.style;
+        for(const [key, value] of Object.entries(obj)) {
+            elementStyle[key] = value;
+        }
+
+        return this;
+    }
+
+    setInnerText(text) {
+        this.element.innerText = text;
+        return this;
+    }
+
+    static getInstanceById(id) {
+        const element = document.getElementById(id);
+        if(!element) return null;
+
+        return new ControlHTMLElement(element);
+    }
+}
+
+export class EventSender {
+    // request always have structure: { eventType: '...', data: {...} }
+
+    static eventTypes = {
+        getExecResult: 'get-execute-result',
+        checkInject: 'check-inject',
+        inject: 'inject'
+    }
+    static eventStructs = {
+      [this.eventTypes.checkInject]: {
+          req: {
+              tabId: Number
+          },
+          res: {
+              injected: Boolean
+          }
+      },
+      [this.eventTypes.inject]: {
+          req: {
+              tabId: Number
+          },
+          res: {
+              resultOfInject: String
+          }
+      },
+      [this.eventTypes.getExecResult]: {
+          req: {
+              tabId: Number,
+              repeat: Number,
+              sleepTime: Number
+          },
+          res: {
+              run: Boolean
+          }
+      }
+    }
+
+    constructor(logger) {
+        this.logger = logger
+    }
+
+    async sendEvent(eventType, data) {
+        this.logger.info(`Start send Event: "${eventType}"`, { eventType, data })
+
+        if(!this._checkEventType(eventType)) {
+            throw new Error(`Invalid event type: "${eventType}"`)
+        }
+
+        this.checkRequest(eventType, data);
+
+        const response = await new Promise(resolve => {
+            chrome.runtime.sendMessage(
+                {
+                    eventType,
+                    data
+                },
+                response => resolve(response)
+            );
+        })
+
+        this.logger.info(`Response on Event "${eventType}" -`, response ?? '<empty>')
+
+        this.checkResponse(eventType, response.data);
+
+        return response.data;
+    }
+
+    checkRequest(eventType, data) {
+        this._check(eventType, data, 'req')
+    }
+
+    checkResponse(eventType, data) {
+        this._check(eventType, data, 'res')
+    }
+
+    _checkEventType(eventType) {
+        return Object.values(EventSender.eventTypes).includes(eventType)
+    }
+
+    _checkStructureItem(structureValue, dataValue) {
+        if(Array.isArray(structureValue)) {
+            return structureValue.some(value => this._checkStructureItem(value, dataValue))
+        }
+
+        switch (true) {
+            case (structureValue === Boolean): {
+                return typeof dataValue === 'boolean'
+            }
+            case (structureValue === Number): {
+                return typeof dataValue === 'number'
+            }
+            case (structureValue === String): {
+                return typeof dataValue === 'string'
+            }
+            case (typeof structureValue === 'undefined'): {
+                return typeof dataValue === 'undefined'
+            }
+            case (structureValue === null): {
+                return typeof dataValue === null
+            }
+            default: {
+                this.logger.warn('Undefined structure value handler', { structureValue, dataValue })
+                return false;
+            }
+        }
+    }
+
+    _checkStructure(structure, data) {
+        const structureKeys = Object.keys(structure);
+
+        structureKeys.forEach(key => {
+            const structureValue = structure[key];
+            const dataValue = data[key];
+
+            const result = this._checkStructureItem(structureValue, dataValue);
+            if(!result) {
+                this.logger.error(`Event data is invalid`, { structureValue, dataValue, key })
+                throw new Error(`Invalid event data`)
+            }
+        })
+    }
+
+    _check(eventType, data, type) {
+        this.logger.debug(`Start check Event "${eventType}" - ${type} data...`, { eventType, data, type })
+
+        if(!this._checkEventType(eventType)) {
+            throw new Error(`Invalid event type: "${eventType}"`)
+        }
+
+        if(!['req', 'res'].includes(type)) {
+            throw new Error(`Invalid type: "${type}"`)
+        }
+
+        const eventStructure = EventSender.eventStructs[eventType];
+        const structure = type === 'req' ? eventStructure.req : eventStructure.res;
+
+        const structureKeys = Object.keys(structure);
+        const dataKeys = Object.keys(data);
+
+        const missedStructureKeys = structureKeys.filter(key => !dataKeys.includes(key));
+        if(missedStructureKeys.length) {
+            this.logger.error(`Missed required Structure keys for type: "${type}"`, missedStructureKeys)
+            throw new Error(`Missed required Structure keys`)
+        }
+
+        this._checkStructure(structure, data);
+
+        this.logger.debug(`Event "${eventType}" data is valid`, { eventType, data, type })
+    }
+}
