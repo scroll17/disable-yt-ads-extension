@@ -22,7 +22,7 @@ class Page {
         const tabIsLoaded = changeInfo.status == 'complete';
         const tabHaveValidUrl = tab.url.includes(this.targetTabUrl)
 
-        return tabIsLoaded && tab.active && tabHaveValidUrl
+        return tabIsLoaded && tabHaveValidUrl
     }
 
     listenOnUpdate() {
