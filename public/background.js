@@ -1,4 +1,4 @@
-import { sleep, Logger, TabLocalStorage } from './js/base.mjs'
+import { sleep, Logger, TabLocalStorage, EventSender } from './js/base.mjs'
 
 class Page {
     AUTO_REMOVE_ADS_STATUS = 'auto-remove-ads-status'
@@ -9,6 +9,7 @@ class Page {
 
     constructor(targetTabUrl = this.YT_URL) {
         this.targetTabUrl = targetTabUrl;
+        this.eventSender = new EventSender(this.logger);
     }
 
     setTargetTabUrl(url) {
@@ -66,17 +67,54 @@ class Page {
         })
     }
 
-    listenExtensionMessages() {
-        chrome.runtime.onMessage.addListener(async function(request, sender, sendResponse) {
-            /**
-             *  Sender: {
-             *      id: "ofaifckbaekjaiaejffcneoimkdmkmde"
-             *      origin: "chrome-extension://ofaifckbaekjaiaejffcneoimkdmkmde"
-             *      url: "chrome-extension://ofaifckbaekjaiaejffcneoimkdmkmde/index.html"
-             *  }
-             * */
+    async extensionMessageHandler(request, sender) {
+        const { eventType, data } = request;
 
-            sendResponse(request);
+        this.logger.info(`Handle extension request Event: "${eventType}"`, { data });
+
+        let responseData;
+        switch (eventType) {
+            case EventSender.eventTypes.checkInject: {
+                const injected = await this._checkDisableAdsScriptIsInjected(data.tabId);
+                responseData = { injected }
+
+                break;
+            }
+            case EventSender.eventTypes.inject: {
+                const resultOfInject = await this._injectDisableAdsScript(data.tabId);
+                responseData = { resultOfInject }
+
+                break;
+            }
+            case EventSender.eventTypes.getExecResult: {
+                const run = await this._getDisableAdsScriptExecuteResult(data.tabId, data.repeat, data.sleepTime);
+                responseData = { run }
+
+                break;
+            }
+            default: {
+                this.logger.info(`Unprocessed event type: "${eventType}"`, { data })
+
+                responseData = {}
+                break;
+            }
+        }
+        if(!responseData) throw new Error(`Response data not found`)
+
+        const response = { data: responseData };
+
+        this.logger.info(`Send response on event: "${eventType}"`, { response })
+
+        return response;
+    }
+
+    listenExtensionMessages() {
+        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            this
+                .extensionMessageHandler(request, sender)
+                .then(response => sendResponse(response))
+
+            return true;
         })
     }
 
@@ -167,6 +205,8 @@ class Page {
         })
 
         this.logger.info('Result of inject ADS script', resultObject)
+
+        return resultObject.result;
     }
 
     async _executeDisableAdsScript(tabId, repeat, sleepTime) {
