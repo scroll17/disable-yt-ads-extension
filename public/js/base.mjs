@@ -18,7 +18,7 @@ export function uuidv4() {
 }
 
 export class Logger {
-    constructor(level = 'info') {
+    constructor(level = 'info', componentName = undefined) {
         this.colors = {
             green: 'color: green',
             blue: 'color: blue',
@@ -34,6 +34,12 @@ export class Logger {
 
         if(!this._isValidLevel(level)) throw new Error(`Invalid level`)
         this.level = level;
+
+        this.componentName = componentName;
+    }
+
+    setComponentName(componentName) {
+        this.componentName = componentName;
     }
 
     setLevel(level) {
@@ -72,7 +78,20 @@ export class Logger {
 
     _log(level, message, data) {
         if(this.levels[level] < this.levels[this.level]) return;
-        console.log(`%c${level.toUpperCase()}:`, this._colorByLevel(level), message, data ?? '')
+
+        let messageStructure = `%c${level.toUpperCase()}:`;
+        const args = [
+            this._colorByLevel(level),
+            message,
+            data ?? ''
+        ]
+
+        if(this.componentName) {
+            messageStructure = '%s ' + messageStructure;
+            args.unshift(`(${this.componentName})`)
+        }
+
+        console.log(messageStructure, ...args)
     }
 }
 

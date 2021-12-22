@@ -76,6 +76,8 @@ class Page {
     logger = new Logger()
 
     constructor(targetTabUrl = this.YT_URL) {
+        this.logger.setComponentName('Extension')
+
         this.targetTabUrl = targetTabUrl;
         this.eventSender = new EventSender(this.logger);
     }

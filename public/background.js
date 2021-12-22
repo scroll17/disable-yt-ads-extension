@@ -8,6 +8,8 @@ class Page {
     logger = new Logger()
 
     constructor(targetTabUrl = this.YT_URL) {
+        this.logger.setComponentName('Background Worker')
+
         this.targetTabUrl = targetTabUrl;
         this.eventSender = new EventSender(this.logger);
     }
