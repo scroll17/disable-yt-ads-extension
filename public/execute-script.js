@@ -1,246 +1,229 @@
-const AUTO_REMOVE_ADS_STATUS = 'auto-remove-ads-status'
+import { ControlHTMLElement, Logger, BrowserTab, EventSender } from './js/base.mjs'
 
-const buttonRemoveAds = document.getElementById('modal');
-const buttonAutoRemoveAds = document.getElementById('b-auto-off')
+class ButtonRemoveAds extends ControlHTMLElement {
+    static elementId = 'modal'
 
-window.onload = () => {
-    if(buttonRemoveAds) {
-        isScriptExecuted(res => {
-            if(res) {
-                changeRemoveAdsText(true)
+    static getInstance() {
+        const element = document.getElementById(this.elementId);
+        if(!element) return null;
+
+        return new ButtonRemoveAds(element);
+    }
+}
+
+class TextRemoveAds extends ControlHTMLElement {
+    static elementId = 'text'
+
+    changeToActive() {
+        this
+            .setStyle({
+                color: 'green',
+                fontWeight: 'bold'
+            })
+            .setInnerText('ON')
+    }
+
+    changeToNotActive() {
+        this
+            .setStyle({
+                color: 'black',
+                fontWeight: undefined
+            })
+            .setInnerText('OFF')
+    }
+
+    static getInstance() {
+        const element = document.getElementById(this.elementId);
+        if(!element) return null;
+
+        return new TextRemoveAds(element);
+    }
+}
+
+class ButtonAutoRemoveAds extends ControlHTMLElement {
+    static elementId = 'b-auto-off'
+
+    changeToActive() {
+        this
+            .setStyle({
+                color: 'limegreen',
+                fontWeight: 'bold'
+            })
+            .setInnerText('YES')
+    }
+
+    changeToNotActive() {
+        this
+            .setStyle({
+                color: 'black',
+                fontWeight: undefined
+            })
+            .setInnerText('NO')
+    }
+
+    static getInstance() {
+        const element = document.getElementById(this.elementId);
+        if(!element) return null;
+
+        return new ButtonAutoRemoveAds(element);
+    }
+}
+
+class Page {
+    AUTO_REMOVE_ADS_STATUS = 'auto-remove-ads-status'
+    YT_URL = 'www.youtube.com/watch'
+
+    logger = new Logger()
+
+    constructor(targetTabUrl = this.YT_URL) {
+        this.targetTabUrl = targetTabUrl;
+        this.eventSender = new EventSender(this.logger);
+    }
+
+    setTargetTabUrl(url) {
+        this.targetTabUrl = url;
+    }
+
+    isTargetTab(tab) {
+        return tab.active && tab.url.includes(this.targetTabUrl)
+    }
+
+    createTurnOnRemoveAdsHandler(data) {
+        let { injected, run, currentTab, textRemoveAds } = data;
+
+        return async () => {
+            if(run) {
+                this.logger.debug('Remove ADS script already run...', data)
+                return;
             }
-        })
 
-        buttonRemoveAds.onclick = () => {
-            execDisableAdsScript(result => {
-                if(!result) throw new Error(`Cannot execute disable ads script`)
-            });
+            if(injected) {
+                this.logger.debug('Remove ADS script already injected...', data)
+            } else {
+                await this.eventSender.sendEvent(EventSender.eventTypes.inject, { tabId: currentTab.id });
+                injected = true;
+            }
+
+            const removeAdsScriptExecuteStatus = await this.eventSender.sendEvent(EventSender.eventTypes.getExecResult, {
+                tabId: currentTab.id,
+                repeat: 3,
+                sleepTime: 1500
+            })
+            run = removeAdsScriptExecuteStatus.run
+
+            if(run) {
+                textRemoveAds.changeToActive();
+            } else {
+                textRemoveAds.changeToNotActive();
+            }
         }
     }
 
-    if(buttonAutoRemoveAds) {
-        getLocalStorageItem(AUTO_REMOVE_ADS_STATUS, value => {
-            if(!value) {
-               initDisableAdsScript(res => {
-                   if(!res) throw new Error(`Cannot init disable ads script`)
+    listenOnLoad() {
+        window.onload = async () => {
+            this.logger.info('Extension page loaded')
 
-                   setLocalStorageItem(AUTO_REMOVE_ADS_STATUS, '0', result => {
-                       console.log('- SET AUTO REMOVE ADS LC ITEM-')
+            const textRemoveAds = TextRemoveAds.getInstance();
+            if(!textRemoveAds) throw new Error(`Text Remove Ads not found`)
 
-                       changeAutoRemoveAdsText(buttonAutoRemoveAds, false)
-                   })
-               })
+            const buttonRemoveAds = ButtonRemoveAds.getInstance();
+            if(!buttonRemoveAds) throw new Error(`Button Remove Ads not found`)
+
+            const buttonAutoRemoveAds = ButtonAutoRemoveAds.getInstance();
+            if(!buttonAutoRemoveAds) throw new Error(`Button Auto Remove Ads not found`)
+
+            const browserTab = new BrowserTab();
+            const currentTab = await browserTab.getCurrentTab();
+            if(!this.isTargetTab(currentTab)) {
+                this.logger.info('Current tab is no target tab', { currentTab })
+                return;
+            }
+
+            const removeAdsScriptInjectStatus = await this.eventSender.sendEvent(EventSender.eventTypes.checkInject, { tabId: currentTab.id })
+            const removeAdsScriptExecuteStatus = await this.eventSender.sendEvent(EventSender.eventTypes.getExecResult, {
+                tabId: currentTab.id,
+                repeat: 3,
+                sleepTime: 1500
+            })
+
+            const turnOnRemoveAdsHandler = this.createTurnOnRemoveAdsHandler({
+                injected: removeAdsScriptInjectStatus.injected,
+                run: removeAdsScriptExecuteStatus.run,
+                currentTab: currentTab,
+                textRemoveAds: textRemoveAds
+            })
+
+            // BUTTON REMOVE ADS
+            if(removeAdsScriptInjectStatus.injected && removeAdsScriptExecuteStatus.run) {
+                this.logger.debug('Remove ADS script already injected and run', { removeAdsScriptInjectStatus, removeAdsScriptExecuteStatus })
+                textRemoveAds.changeToActive();
             } else {
-                const autoRemoveValue = Boolean(Number(value));
-                if(autoRemoveValue) {
-                    execDisableAdsScript(result => {
-                        if(!result) throw new Error(`Cannot execute disable ads script`)
+                this.logger.debug('Remove ADS script NOT injected or run', { removeAdsScriptInjectStatus, removeAdsScriptExecuteStatus })
+                textRemoveAds.changeToNotActive();
+            }
 
-                        changeAutoRemoveAdsText(buttonAutoRemoveAds, true)
-                    });
+            // BUTTON AUTO REMOVE ADS
+            const currentTabLocalStorage = browserTab.getLocalStorage();
+
+            const autoRemoveAdsStatusRaw = await currentTabLocalStorage.getItem(this.AUTO_REMOVE_ADS_STATUS);
+            if(!autoRemoveAdsStatusRaw) {
+                this.logger.info(`Value by key: "${this.AUTO_REMOVE_ADS_STATUS}" not exist in LocalStorage`, { autoRemoveAdsStatusRaw })
+
+                await currentTabLocalStorage.setItem(this.AUTO_REMOVE_ADS_STATUS, '0')
+
+                this.logger.debug(`Set default value ('0') to LocalStorage by key: "${this.AUTO_REMOVE_ADS_STATUS}"`, { autoRemoveAdsStatusRaw: '0' })
+
+                buttonAutoRemoveAds.changeToNotActive();
+            } else {
+                const autoRemoveAdsStatus = Boolean(Number(autoRemoveAdsStatusRaw));
+
+                if(autoRemoveAdsStatus) {
+                    this.logger.info('Auto remove ads is enable', { autoRemoveAdsStatus });
+
+                    await turnOnRemoveAdsHandler();
+                    buttonAutoRemoveAds.changeToActive();
+
                 } else {
-                    changeAutoRemoveAdsText(buttonAutoRemoveAds, false)
+                    this.logger.info('Auto remove ADS is disabled', { autoRemoveAdsStatus })
+
+                    buttonAutoRemoveAds.changeToNotActive();
                 }
             }
-        })
 
-        buttonAutoRemoveAds.onclick = () => {
-            toggleAutoRemoveAdsStatus(buttonAutoRemoveAds)
-        }
-    }
-}
+            // PAGE EVENT HANDLERS
+            buttonRemoveAds
+                .getElement()
+                .onclick = turnOnRemoveAdsHandler
 
-function changeAutoRemoveAdsText(element, value) {
-    if(value) {
-        element.style.color = 'limegreen';
-        element.style.fontWeight = 'bold';
-        element.innerText = 'YES'
-    } else {
-        element.style.color = 'black';
-        element.style.fontWeight = undefined;
-        element.innerText = 'NO'
-    }
-}
+            buttonAutoRemoveAds
+                .getElement()
+                .onclick = async () => {
+                    const autoRemoveAdsStatusRaw = await currentTabLocalStorage.getItem(this.AUTO_REMOVE_ADS_STATUS);
+                    const autoRemoveAdsStatus = Boolean(Number(autoRemoveAdsStatusRaw));
 
-function changeRemoveAdsText(value) {
-    const text = document.getElementById('text')
+                    if(autoRemoveAdsStatus) {
+                        await currentTabLocalStorage.setItem(this.AUTO_REMOVE_ADS_STATUS, '0');
+                        buttonAutoRemoveAds.changeToNotActive();
 
-    if(value) {
-        text.style.color = 'green';
-        text.style.fontWeight = 'bold';
-        text.innerText = 'ON'
-    } else {
-        text.style.color = 'black';
-        text.style.fontWeight = undefined;
-        text.innerText = 'OFF'
-    }
-}
+                        this.logger.debug(`Change value ('1') -> ('0') in LocalStorage by key: "${this.AUTO_REMOVE_ADS_STATUS}"`, {
+                            old: autoRemoveAdsStatus,
+                            new: !autoRemoveAdsStatus
+                        })
+                    } else {
+                        await turnOnRemoveAdsHandler();
 
-function getCurrentTab(callback) {
-    chrome.tabs.query({ active: true, currentWindow: true }, tabs => callback(tabs[0]))
-}
+                        await currentTabLocalStorage.setItem(this.AUTO_REMOVE_ADS_STATUS, '1')
+                        buttonAutoRemoveAds.changeToActive();
 
-function isScriptExisting(callback) {
-    getCurrentTab(tab => {
-        chrome.tabs.executeScript(
-            tab.id,
-            {
-                code: `(() => window.__remove_yt_ads_exec)()`
-            },
-            result => {
-                console.log('window.__remove_yt_ads_exec => ', result[0])
-                callback(Boolean(result[0]))
-            }
-        )
-    })
-}
-
-function isScriptExecuted(callback) {
-    getCurrentTab(tab => {
-        chrome.tabs.executeScript(
-            tab.id,
-            {
-                code: `(() => window.__remove_yt_ads)()`
-            },
-            result => {
-                console.log('window.__remove_yt_ads => ', result[0])
-                callback(Boolean(result[0]))
-            }
-        )
-    })
-}
-
-function initDisableAdsScript(callback) {
-    isScriptExisting(res => {
-        if(!res) {
-            getCurrentTab(tab => {
-                chrome.tabs.executeScript(
-                    tab.id,
-                    {
-
-                    },
-                    result => {
-                        const [res] = result;
-                        if(res) {
-                            console.log('%cAdvertising remove script init!', 'color: green')
-                        } else {
-                            console.log('%cAdvertising remove script not init!', 'color: red')
-                        }
-
-                        callback(res)
+                        this.logger.debug(`Change value ('0') -> ('1') in LocalStorage by key: "${this.AUTO_REMOVE_ADS_STATUS}"`, {
+                            old: autoRemoveAdsStatus,
+                            new: !autoRemoveAdsStatus
+                        })
                     }
-                )
-            })
+                }
         }
-    })
-}
-
-function execDisableAdsScript(callback) {
-    const exec = () => {
-        isScriptExecuted(res => {
-            if(!res) {
-                getCurrentTab(tab => {
-                    chrome.tabs.executeScript(
-                        tab.id,
-                        {
-                            code: `(() => window.__remove_yt_ads_exec && window.__remove_yt_ads_exec())()`
-                        },
-                        result => {
-                            const [res] = result;
-
-                            if(res) {
-                                console.log('disable ads script result => ', res)
-
-                                const text = document.getElementById('text')
-                                text.style.color = 'green';
-                                text.style.fontWeight = 'bold';
-                                text.innerText = 'ON'
-
-                                console.log('- TEXT OF DISABLE STATUS CHANGED -')
-                            }
-
-                            callback(res);
-                        }
-                    )
-                })
-            } else {
-                callback(res)
-            }
-        })
     }
-
-    isScriptExisting(res => {
-        if(!res) {
-            initDisableAdsScript(res => {
-                if(!res) throw new Error(`Cannot init remove ads script`)
-
-                exec()
-            })
-        } else {
-            exec()
-        }
-    })
 }
 
-function getLocalStorageItem(itemName, callback) {
-    getCurrentTab(tab => {
-        chrome.tabs.executeScript(
-            tab.id,
-            {
-                code: `(() => localStorage.getItem('${itemName}'))()`
-            },
-            result => {
-                callback(result[0])
-            }
-        )
-    })
-}
-
-function setLocalStorageItem(itemName, itemValue, callback) {
-    getCurrentTab(tab => {
-        chrome.tabs.executeScript(
-            tab.id,
-            {
-                code: `(() => localStorage.setItem('${itemName}', '${itemValue}'))()`
-            },
-            result => {
-                callback(result[0])
-            }
-        )
-    })
-}
-
-function toggleAutoRemoveAdsStatus(element) {
-    getLocalStorageItem(AUTO_REMOVE_ADS_STATUS, value => {
-        if(!value) {
-            initDisableAdsScript(res => {
-                if(!res) throw new Error(`Cannot init disable ads script`)
-
-                setLocalStorageItem(AUTO_REMOVE_ADS_STATUS, '0', result => {
-                    console.log('- SET AUTO REMOVE ADS LC ITEM-')
-
-                    changeAutoRemoveAdsText(element, false)
-                })
-            })
-        } else {
-            const autoRemoveValue = Boolean(Number(value));
-            if(autoRemoveValue) {
-                setLocalStorageItem(AUTO_REMOVE_ADS_STATUS, '0', res => {
-                    if(!res) throw new Error(`Cannot change local storage item`)
-
-                    changeAutoRemoveAdsText(element, false)
-                })
-            } else {
-                setLocalStorageItem(AUTO_REMOVE_ADS_STATUS, '1', res => {
-                    if(!res) throw new Error(`Cannot change local storage item`)
-
-                    execDisableAdsScript(result => {
-                        if(!result) throw new Error(`Cannot execute disable ads script`)
-
-                        changeAutoRemoveAdsText(element, true)
-                    });
-                })
-            }
-        }
-    })
-}
+const page = new Page();
+page.listenOnLoad();
