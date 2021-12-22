@@ -207,21 +207,17 @@ class Page {
                         await currentTabLocalStorage.setItem(this.AUTO_REMOVE_ADS_STATUS, '0');
                         buttonAutoRemoveAds.changeToNotActive();
 
-                        this.logger.debug(`Change value ('1') -> ('0') in LocalStorage by key: "${this.AUTO_REMOVE_ADS_STATUS}"`, {
-                            old: autoRemoveAdsStatus,
-                            new: !autoRemoveAdsStatus
-                        })
                     } else {
                         await turnOnRemoveAdsHandler();
 
                         await currentTabLocalStorage.setItem(this.AUTO_REMOVE_ADS_STATUS, '1')
                         buttonAutoRemoveAds.changeToActive();
-
-                        this.logger.debug(`Change value ('0') -> ('1') in LocalStorage by key: "${this.AUTO_REMOVE_ADS_STATUS}"`, {
-                            old: autoRemoveAdsStatus,
-                            new: !autoRemoveAdsStatus
-                        })
                     }
+
+                    this.logger.debug(`Change value in LocalStorage by key: "${this.AUTO_REMOVE_ADS_STATUS}"`, {
+                        old: autoRemoveAdsStatus,
+                        new: !autoRemoveAdsStatus
+                    })
                 }
         }
     }
