@@ -19,7 +19,7 @@ class Page {
     }
 
     isTargetTab(changeInfo, tab) {
-        const tabIsLoaded = changeInfo.status == 'complete';
+        const tabIsLoaded = changeInfo.status === 'complete';
         const tabHaveValidUrl = tab.url.includes(this.targetTabUrl)
 
         return tabIsLoaded && tabHaveValidUrl
